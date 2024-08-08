@@ -2,8 +2,11 @@ package gift.controller;
 
 import gift.service.KakaoService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -21,6 +24,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 @RestController
 @Tag(name = "Kakao Authentication System", description = "Operations related to Kakao authentication")
 public class KakaoController {
+    private static final Logger logger = LoggerFactory.getLogger(KakaoController.class);
+
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER_PREFIX = "Bearer ";
     public static final String GRANT_TYPE = "authorization_code";
@@ -55,6 +60,8 @@ public class KakaoController {
                 "&redirect_uri=" + encodedRedirectUri +
                 "&scope=" + encodedScope;
 
+        logger.debug("Redirecting to Kakao login URL: {}", kakaoLoginUrl);
+
         response.sendRedirect(kakaoLoginUrl);
     }
 
@@ -64,14 +71,22 @@ public class KakaoController {
             @Parameter(description = "Authorization code from Kakao")
             @RequestParam(required = false) String code) {
         if (code == null || code.isEmpty()) {
+            logger.warn("Authorization code is missing");
+            logger.info("Received code: {}", code);
             return ResponseEntity.badRequest().body("Authorization code is missing");
         }
-        System.out.println("Authorization code received: " + code);
 
-        String accessToken = kakaoService.getAccessToken(code);
+        logger.debug("Authorization code received: {}", code);
 
+        String accessToken;
+        try {
+            accessToken = kakaoService.getAccessToken(code);
+        } catch (Exception e) {
+            logger.error("Failed to get access token", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to get access token");
+        }
         // 액세스 토큰 로그
-        System.out.println("Access token received: " + accessToken);
+        logger.debug("Access token received: {}", accessToken);
 
         return ResponseEntity.ok(accessToken);
     }
@@ -82,6 +97,9 @@ public class KakaoController {
             @Parameter(description = "Authorization token", required = true)
             @RequestHeader(value = AUTHORIZATION_HEADER) String authorizationHeader) {
         String accessToken = authorizationHeader.replace(BEARER_PREFIX, "");
+
+        logger.debug("Fetching member info with access token: {}", accessToken);
+
         return ResponseEntity.ok(kakaoService.getMember(accessToken).toString());
     }
 }

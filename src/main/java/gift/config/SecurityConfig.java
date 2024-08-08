@@ -46,7 +46,7 @@ public class SecurityConfig {
                         .loginPage("/login")
                         .defaultSuccessUrl("/home", true)
                 )
-                .httpBasic(withDefaults()); // 추가: HTTP 기본 인증 추가
+                .httpBasic(withDefaults()); // HTTP 기본 인증 추가
 
         return http.build();
     }
