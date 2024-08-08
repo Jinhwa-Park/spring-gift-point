@@ -66,7 +66,13 @@ public class KakaoController {
         if (code == null || code.isEmpty()) {
             return ResponseEntity.badRequest().body("Authorization code is missing");
         }
+        System.out.println("Authorization code received: " + code);
+
         String accessToken = kakaoService.getAccessToken(code);
+
+        // 액세스 토큰 로그
+        System.out.println("Access token received: " + accessToken);
+
         return ResponseEntity.ok(accessToken);
     }
 
